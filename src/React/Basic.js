@@ -1,9 +1,9 @@
 "use strict";
 
-var React = require('react');
+var createReactClass = require('create-react-class');
 
 exports.react_ = function(spec) {
-  return React.createClass({
+  return createReactClass({
     getInitialState: function() {
       return spec.initialState(this.props);
     },
