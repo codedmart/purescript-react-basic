@@ -7,15 +7,41 @@ module React.Basic
 import Prelude
 
 import Control.Monad.Eff (Eff, kind Effect)
-import Data.Function.Uncurried (Fn3, mkFn3)
+import Data.Function.Uncurried (Fn2, Fn3, Fn5, mkFn2, mkFn3, mkFn5)
 import React.Basic.DOM as React.Basic.DOM
 import React.Basic.Types (CSS, EventHandler, JSX, ReactComponent, ReactFX)
 import React.Basic.Types as React.Basic.Types
 
 foreign import react_
-  :: forall props state
-   . { initialState :: props -> state
-     , render :: Fn3 props state (state -> Eff (react :: ReactFX) Unit) JSX
+  :: forall eff props state error errorInfo
+   . { initialState
+         :: props
+         -> state
+     , onLoad
+         :: Fn3
+            props
+            state
+            ((state -> state) -> Eff eff Unit)
+            (Eff eff Unit)
+     , onUnload
+         :: Fn2
+            props
+            state
+            (Eff eff Unit)
+     , onError
+         :: Fn5
+            props
+            state
+            error
+            errorInfo
+            ((state -> state) -> Eff eff Unit)
+            (Eff eff Unit)
+     , render
+         :: Fn3
+            props
+            state
+            ((state -> state) -> Eff eff Unit)
+            JSX
      }
   -> ReactComponent props
 
@@ -29,9 +55,37 @@ foreign import react_
 -- | constructed using the helper functions provided by the `React.Basic.DOM`
 -- | module (and re-exported here).
 react
-  :: forall props state
-   . { initialState :: props -> state
-     , render :: props -> state -> (state -> Eff (react :: ReactFX) Unit) -> JSX
+  :: forall eff props state error errorInfo
+   . { initialState
+         :: props
+         -> state
+     , onLoad
+         :: props
+         -> state
+         -> ((state -> state) -> Eff eff Unit)
+         -> Eff eff Unit
+     , onUnload
+         :: props
+         -> state
+         -> Eff eff Unit
+     , onError
+         :: props
+         -> state
+         -> error
+         -> errorInfo
+         -> ((state -> state) -> Eff eff Unit)
+         -> Eff eff Unit
+     , render
+         :: props
+         -> state
+         -> ((state -> state) -> Eff eff Unit)
+         -> JSX
      }
   -> ReactComponent props
-react { initialState, render } = react_ { initialState, render: mkFn3 render }
+react { initialState, onLoad, onUnload, onError, render } = react_
+  { initialState
+  , onLoad: mkFn3 onLoad
+  , onUnload: mkFn2 onUnload
+  , onError: mkFn5 onError
+  , render: mkFn3 render
+  }
